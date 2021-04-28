@@ -19,14 +19,24 @@ class Scrapping
     #CSV
     def save_as_csv(file_name)
         temp_hash = get_townhall_urls()
+        head = {"Name" => "Email"}
 
         File.new "db/#{file_name}","w"
         res = CSV.generate(:col_sep => ",") do |csv|
-            temp_hash.each do |h|
-                csv << h.keys
-                csv << h.values
+            temp_hash.each.with_index do |h,i|
+                #csv << head if i == 0
+                csv << h.keys + h.values
             end
         end
+        res = "Name,Email,\n#{res}"
+
+        # res = CSV.open("db/#{file_name}", "wb") do |csv|
+        #     csv << temp_hash.first.keys
+        #     temp_hash.each do |the_hash|
+        #         csv << the_hash.values
+        #     end
+        # end
+
         File.write("db/#{file_name}", res)
     end
 
