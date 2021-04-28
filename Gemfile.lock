@@ -115,6 +115,7 @@ DEPENDENCIES
   csv
   dotenv
   google_drive
+  googleauth
   json
   nokogiri
   open-uri

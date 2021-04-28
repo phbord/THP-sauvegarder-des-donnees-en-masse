@@ -9,49 +9,52 @@ class Scrapping
     #JSON
     def save_as_JSON(file_name)
         temp_hash = get_townhall_urls()
+
+        File.new "db/#{file_name}","w"
         File.open("db/#{file_name}","w") do |f|
             f.write(JSON.pretty_generate(temp_hash))
         end
     end
 
+    #CSV
+    def save_as_csv(file_name)
+        temp_hash = get_townhall_urls()
+
+        File.new "db/#{file_name}","w"
+        res = CSV.generate(:col_sep => ",") do |csv|
+            temp_hash.each do |h|
+                csv << h.keys
+                csv << h.values
+            end
+        end
+        File.write("db/#{file_name}", res)
+    end
+
     #Google spreadsheets
-    #https://docs.google.com/spreadsheets/d/1S47m351U2pWWFhLN4wEXCmbTzhtguH6mqoNgGpoWr-k/edit#gid=0
     def save_as_spreadsheet(file_url)
         return false unless file_url.is_a? String
-        credentials = connection
-        credentials.code = authorization_code
-        credentials.fetch_access_token!
-        session = GoogleDrive::Session.from_credentials(credentials)
-        ws = session.spreadsheet_by_key(file_url).worksheets[0]
-        dump_all_cells(ws)
+        temp_hash = get_townhall_urls()
+
+        ws = connection
+        ws = ws.spreadsheet_by_key(file_url).worksheets[0] #read
+
+        ws[1, 1] = "Name"
+        ws[1, 2] = "Email"
+
+        row = 2
+        temp_hash.each do |h|
+            ws[row, 1] = h.keys.inspect.gsub(/\[|\"\]/, "").gsub(/\"/, "")
+            ws[row, 2] = h.values.gsub(/\[|\"\]/, "").gsub(/\"/, "")
+            row += 1
+        end
+
+        ws.save
+        ws.reload
     end
 
     #Google spreadsheets : Connexion
     def connection
-        credentials = Google::Auth::UserRefreshCredentials.new(
-            client_id: ENV["GOOGLE_CLIENT_ID"],
-            client_secret: ENV["GOOGLE_CLIENT_SECRET_CODE"],
-            scope: [
-                "https://www.googleapis.com/auth/drive",
-                "https://spreadsheets.google.com/feeds/",
-            ],
-            redirect_uri: "http://example.com/redirect",
-            additional_parameters: { "access_type" => "offline" }),
-        auth_url = credentials.authorization_uri
-        return auth_url
-    end
-
-    #Google spreadsheets : Vide toutes les cellules
-    def dump_all_cells(ws)
-        (1..ws.num_rows).each do |row|
-            (1..ws.num_cols).each do |col|
-            p ws[row, col]
-            end
-        end
-    end
-
-    #CSV
-    def save_as_csv
+        return session = GoogleDrive::Session.from_config("config.json")
     end
 
 
